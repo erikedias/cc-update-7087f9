@@ -96,7 +96,7 @@ ipcMain.handle("keys:status", () => {
     reportei: has("reporteiToken"), meta: has("metaToken"), metaExpiresAt: s.metaExpiresAt || null,
     google: has("googleAdsRefreshToken") && has("googleAdsDevToken"), linkedin: has("linkedinToken"),
     linkedinApp: has("linkedinClientId") && has("linkedinClientSecret"), gemini: has("geminiKey"), trello: has("trelloKey") && has("trelloToken"),
-    metaAppSecret: has("metaAppSecret"), sheets: has("googleSheetsRefreshToken"), painelFound: fs.existsSync(painelStorePath()),
+    metaAppSecret: has("metaAppSecret"), sheets: has("googleSheetsRefreshToken"), meetings: !!S().googleMeetingsOk, painelFound: fs.existsSync(painelStorePath()),
     vaultPath: s.vaultPath, vaultFound: !!(s.vaultPath && fs.existsSync(s.vaultPath)),
   };
 });
@@ -454,7 +454,7 @@ ipcMain.handle("google:sheetsConnect", async () => {
   const st = readStore(); st.settings.googleSheetsRefreshToken = tok.refresh_token; writeStore(st); _shAt = null;
   return { ok: true };
 });
-ipcMain.handle("google:sheetsDisconnect", () => { const st = readStore(); delete st.settings.googleSheetsRefreshToken; writeStore(st); _shAt = null; return true; });
+ipcMain.handle("google:sheetsDisconnect", () => { const st = readStore(); delete st.settings.googleSheetsRefreshToken; delete st.settings.googleMeetingsOk; writeStore(st); _shAt = null; return true; });
 async function sheetTabs(id) {
   try { const r = await sheetsApi(`${id}?fields=properties.title,sheets.properties(sheetId,title,hidden)`); if (r && r.sheets) { const tabs = r.sheets.filter((x) => !x.properties.hidden).map((x) => ({ name: x.properties.title, gid: String(x.properties.sheetId), title: x.properties.title })); tabs.docTitle = r.properties && r.properties.title; return tabs; } }
   catch (e) { noteApiOff(e); if (e.status !== 403 && e.status !== 404 && e.status !== 401 && e.status !== 400) throw e; }
@@ -1239,17 +1239,85 @@ function vaultBundle(c) {
     emAberto: section(main, /Em aberto/), acompanhamento: section(main, /Acompanhamento/), meetings, otherNotes: others, stamp: Math.max(0, ...mtimes),
   };
 }
+/* ---------------------------------------------------------- */
+/* REUNIÕES sem Obsidian: agenda + Docs do Google, ou ata colada */
+/* ---------------------------------------------------------- */
+const M = require("./meetings.cjs");
+const isoDay = (d) => new Date(d).toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+async function googleMeetings(c) {
+  const s = S(); const tok = await sheetsToken();
+  if (!tok) return { ok: false, reason: "Conecte sua conta do Google em Configurações para ler as reuniões da agenda." };
+  const H = { headers: { Authorization: `Bearer ${tok}` } };
+  const since = new Date(Date.now() - 75 * 864e5).toISOString(), until = new Date(Date.now() + 864e5).toISOString();
+  let events = [], pageToken = "";
+  try {
+    for (let i = 0; i < 5; i++) {
+      const r = await httpJson("https://www.googleapis.com/calendar/v3/calendars/primary/events?" + new URLSearchParams({ timeMin: since, timeMax: until, singleEvents: "true", orderBy: "startTime", maxResults: "250", ...(pageToken ? { pageToken } : {}) }), H);
+      events.push(...(r.items || [])); pageToken = r.nextPageToken; if (!pageToken) break;
+    }
+  } catch (e) {
+    if (e.status === 403 || e.status === 401) {
+      const off = /has not been used|is disabled|SERVICE_DISABLED/i.test(String(e.message));
+      return { ok: false, needReconnect: !off, apiOff: off ? "calendar" : null, reason: off ? "Ative a API do Google Calendar no projeto do Google Cloud (veja o guia)." : "Reconecte o Google em Configurações para liberar a leitura da agenda e dos documentos." };
+    }
+    throw e;
+  }
+  const mine = events.filter((ev) => ev.status !== "cancelled" && M.eventMatchesClient(ev, c));
+  const items = []; let docErr = null;
+  for (const ev of mine) {
+    const date = isoDay((ev.start && (ev.start.dateTime || ev.start.date)) || Date.now());
+    if (date > isoDay(Date.now())) continue;
+    for (const a of M.docAttachments(ev)) {
+      try {
+        const doc = await httpJson(`https://docs.googleapis.com/v1/documents/${a.id}?includeTabsContent=true`, H, 60000);
+        const text = M.flattenDoc(doc); if (text.length < 80) continue;
+        items.push({ id: a.id, date, title: ev.summary || doc.title || "Reunião", docTitle: doc.title || a.title, source: "google", kind: M.docKind(doc.title || a.title, text), text, url: `https://docs.google.com/document/d/${a.id}` });
+      } catch (e) {
+        if (e.status === 403 && /has not been used|is disabled|SERVICE_DISABLED/i.test(String(e.message))) return { ok: false, apiOff: "docs", reason: "Ative a API do Google Docs no projeto do Google Cloud (veja o guia)." };
+        docErr = e.status === 403 || e.status === 404 ? "sem acesso a algum documento da reunião" : e.message;
+      }
+    }
+  }
+  return { ok: true, items, found: mine.length, docErr, fetchedAt: new Date().toISOString() };
+}
+function vaultMeetingItems(b) { return b ? b.meetings.map((m) => ({ id: "obs:" + m.file, date: m.date, title: m.file.replace(/\.md$/, ""), source: "obsidian", kind: "notas", text: m.full || [m.resumo, m.diagnostico, m.plano].filter(Boolean).join("\n") })) : []; }
+function allMeetings(st, c, b) {
+  const g = ((st.meetingsGoogle || {})[c.key] || {}).items || [];
+  const man = ((st.manualMeetings || {})[c.key] || []).map((m) => ({ ...m, source: "manual", kind: "notas" }));
+  return M.mergeMeetings([...vaultMeetingItems(b), ...g, ...man]);
+}
+const meetingsView = (list) => list.map((m) => ({ id: m.id, date: m.date, title: m.title, source: m.source, kind: m.kind, chars: m.text.length, url: m.url || null }));
+ipcMain.handle("meetings:refresh", async (_e, { key }) => {
+  const st = readStore(); const c = st.clients.find((x) => x.key === key); if (!c) return { ok: false, reason: "cliente não encontrado" };
+  const r = await googleMeetings(c);
+  if (r.ok) { const st2 = readStore(); st2.meetingsGoogle = st2.meetingsGoogle || {}; st2.meetingsGoogle[key] = { items: r.items, fetchedAt: r.fetchedAt }; writeStore(st2); }
+  return { ...r, items: undefined, count: (r.items || []).length };
+});
+ipcMain.handle("meetings:add", (_e, { key, date, title, text }) => {
+  if (!text || String(text).trim().length < 80) throw new Error("Cole o texto da ata ou da transcrição (muito curto).");
+  const st = readStore(); st.manualMeetings = st.manualMeetings || {}; const l = (st.manualMeetings[key] = st.manualMeetings[key] || []);
+  l.push({ id: "man:" + Date.now(), date: /^\d{4}-\d{2}-\d{2}$/.test(date || "") ? date : isoDay(Date.now()), title: String(title || "Reunião").slice(0, 120), text: String(text).slice(0, 120000) });
+  writeStore(st); return true;
+});
+ipcMain.handle("meetings:remove", (_e, { key, id }) => { const st = readStore(); const l = (st.manualMeetings || {})[key]; if (l) st.manualMeetings[key] = l.filter((m) => m.id !== id); writeStore(st); return true; });
 ipcMain.handle("strategy:get", (_e, { key }) => {
   const st = readStore(); const c = st.clients.find((x) => x.key === key);
   if (!c) return null;
-  const b = vaultBundle(c); if (!b) return { available: false };
+  const b = vaultBundle(c);
+  const ml = allMeetings(st, c, b);
+  const gm = (st.meetingsGoogle || {})[key];
+  const meetings = { list: meetingsView(ml), googleOn: !!st.settings.googleSheetsRefreshToken, googleOk: !!st.settings.googleMeetingsOk, googleAt: gm ? gm.fetchedAt : null, hasVault: !!b };
+  const stamp = String(b ? b.stamp : 0) + "|" + M.meetingsStamp(ml);
   const cache = (st.strategyCache || {})[key];
-  return { available: true, bundle: b, ai: cache && cache.stamp === b.stamp ? cache.data : null, aiStale: !!(cache && cache.stamp !== b.stamp), aiPrev: cache ? cache.data : null };
+  return { available: true, bundle: b || { meetings: [] }, meetings, stamp, ai: cache && cache.stamp === stamp ? cache.data : null, aiStale: !!(cache && cache.stamp !== stamp), aiPrev: cache ? cache.data : null };
 });
 ipcMain.handle("strategy:ai", async (_e, { key, campaigns, recentAds }) => {
   const st = readStore(); const c = st.clients.find((x) => x.key === key);
   const s = st.settings; if (!s.geminiKey) throw new Error("Falta a chave do Gemini em Configurações.");
-  const b = vaultBundle(c); if (!b) throw new Error("Não achei a pasta deste cliente no cofre.");
+  const b = vaultBundle(c);
+  try { const r = await googleMeetings(c); if (r.ok) { const sx = readStore(); sx.meetingsGoogle = sx.meetingsGoogle || {}; sx.meetingsGoogle[key] = { items: r.items, fetchedAt: r.fetchedAt }; writeStore(sx); } } catch {}
+  const ml = allMeetings(readStore(), c, b); const stampNow = String(b ? b.stamp : 0) + "|" + M.meetingsStamp(ml);
+  if (!ml.length && !(b && (b.visaoGeral || b.acompanhamento))) throw new Error("Este cliente ainda não tem reunião lida. Conecte o Google (agenda) ou cole a ata/transcrição da última reunião.");
   const hoje = new Date(); const hojeISO = hoje.toISOString().slice(0, 10); const dm = (iso) => (iso ? new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "?");
   // o que foi feito na semana (Trello) = evidência datada de execução
   let feito = "";
@@ -1259,15 +1327,15 @@ ipcMain.handle("strategy:ai", async (_e, { key, campaigns, recentAds }) => {
   } catch {}
   const novos = (recentAds || []).slice(0, 60).map((a) => `- ${a.plataforma} · ${a.campanha}${a.conjunto ? " > " + a.conjunto : ""}${a.anuncio ? " > " + a.anuncio : ""} · criado em ${dm(a.criadoEm)}${a.status ? " · " + a.status : ""}`).join("\n");
   const src = [
-    b.visaoGeral && `## HISTÓRICO SEMANAL (gargalo por semana)\n${b.visaoGeral}`,
-    b.ultimaSemana && `## ÚLTIMA SEMANA REGISTRADA\n${b.ultimaSemana.slice(0, 6000)}`,
-    `## REUNIÕES EM ORDEM CRONOLÓGICA (da mais antiga para a mais nova)\n` + [...b.meetings].reverse().map((m) => `### Reunião de ${m.date.split("-").reverse().join("/")}\n${m.full || [m.resumo, m.diagnostico, m.plano].filter(Boolean).join("\n")}`).join("\n\n"),
-    b.acompanhamento && `## ACOMPANHAMENTO ATUAL (tarefas no eKyte e combinados da última reunião)\n${b.acompanhamento.slice(0, 5000)}`,
-    b.emAberto && `## EM ABERTO PARA A PRÓXIMA REUNIÃO\n${b.emAberto}`,
+    b && b.visaoGeral && `## HISTÓRICO SEMANAL (gargalo por semana)\n${b.visaoGeral}`,
+    b && b.ultimaSemana && `## ÚLTIMA SEMANA REGISTRADA\n${b.ultimaSemana.slice(0, 6000)}`,
+    `## REUNIÕES EM ORDEM CRONOLÓGICA (da mais antiga para a mais nova)\n` + ml.map((m) => `### Reunião de ${m.date.split("-").reverse().join("/")} · ${m.title}${m.kind === "transcricao" ? " (TRANSCRIÇÃO BRUTA: extraia daqui os combinados, responsáveis e prazos)" : ""}\n${m.text}`).join("\n\n"),
+    b && b.acompanhamento && `## ACOMPANHAMENTO ATUAL (tarefas no eKyte e combinados da última reunião)\n${b.acompanhamento.slice(0, 5000)}`,
+    b && b.emAberto && `## EM ABERTO PARA A PRÓXIMA REUNIÃO\n${b.emAberto}`,
     feito && `## FEITO NA SEMANA (cards do Trello com a data da entrega)\n${feito}`,
     novos && `## ANÚNCIOS E CAMPANHAS CRIADOS RECENTEMENTE (data de criação na plataforma)\n${novos}`,
   ].filter(Boolean).join("\n\n");
-  const prompt = `Você é a gestora de projetos de uma agência de mídia paga. Hoje é ${hojeISO.split("-").reverse().join("/")}. Leia o histórico do cliente "${c.name}" e devolva a leitura estratégica do que a equipe está ATACANDO, com a LINHA DO TEMPO de cada frente: quando foi combinada, quando entrou no ar e em que pé está hoje.
+  const prompt = `Você é a gestora de projetos de uma agência de mídia paga. Hoje é ${hojeISO.split("-").reverse().join("/")}. Leia as reuniões e o histórico do cliente "${c.name}" (podem ser notas já resumidas ou transcrições brutas com falas de várias pessoas; nas transcrições, descubra você mesma o que foi combinado, por quem e para quando) e devolva a leitura estratégica do que a equipe está ATACANDO, com a LINHA DO TEMPO de cada frente: quando foi combinada, quando entrou no ar e em que pé está hoje.
 
 Como montar a linha do tempo:
 - As reuniões vêm em ordem cronológica. Uma frente nasce na reunião em que o gargalo, a hipótese e a solução foram combinados. Siga a frente nas reuniões seguintes: foi executada? ajustada? deu resultado? foi abandonada?
@@ -1291,7 +1359,7 @@ Outras regras:
 Responda só JSON: {"resumo":"2 frases sobre o momento do projeto","frentes":[{"plataforma":"Meta|Google|LinkedIn|Geral","gargalo":"","hipotese":"","solucao":"","status":"testando|planejado|validado|descartado","combinadoEm":"DD/MM ou vazio","ativadoEm":"DD/MM ou vazio","situacao":"","eventos":[{"data":"DD/MM","rotulo":"","texto":"","fonte":""}],"proximo":"","evidencia":"o número ou fato da nota que sustenta","campanhas":[],"conjuntos":[]}],"proximos":["até 4 próximos passos"]}
 
 NOTAS DO COFRE E EVIDÊNCIAS:
-${src.slice(0, 95000)}`;
+${src.slice(0, 280000)}`;
   const model = s.geminiModel || "gemini-2.5-flash";
   const r = await httpJson(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(s.geminiKey)}`, {
     method: "POST", headers: { "Content-Type": "application/json" },
@@ -1301,7 +1369,7 @@ ${src.slice(0, 95000)}`;
   let data; try { data = JSON.parse(text); } catch { data = JSON.parse(text.replace(/^[^{]*/, "").replace(/[^}]*$/, "")); }
   data.geradoEm = new Date().toISOString(); data.v = 3;
   (data.frentes || []).forEach((f) => { if (!f.desde) f.desde = f.combinadoEm || ""; });
-  const st2 = readStore(); st2.strategyCache = st2.strategyCache || {}; st2.strategyCache[key] = { stamp: b.stamp, data }; writeStore(st2);
+  const st2 = readStore(); st2.strategyCache = st2.strategyCache || {}; st2.strategyCache[key] = { stamp: stampNow, data }; writeStore(st2);
   return data;
 });
 ipcMain.handle("vault:open", (_e, { key, file }) => {
@@ -1391,7 +1459,7 @@ ipcMain.handle("keys:test", async (_e, { which }) => {
 ipcMain.handle("google:connect", async () => {
   const s = S(); if (!s.googleAdsClientId || !s.googleAdsClientSecret) throw new Error("Preencha o Client ID e o Client Secret do Google antes de conectar.");
   const http = require("http"); const PORT = 42813; const redirectUri = `http://localhost:${PORT}`;
-  const authUrl = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({ client_id: s.googleAdsClientId, redirect_uri: redirectUri, response_type: "code", scope: "https://www.googleapis.com/auth/adwords https://www.googleapis.com/auth/spreadsheets.readonly", access_type: "offline", prompt: "consent" }).toString();
+  const authUrl = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({ client_id: s.googleAdsClientId, redirect_uri: redirectUri, response_type: "code", scope: "https://www.googleapis.com/auth/adwords https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/documents.readonly", access_type: "offline", prompt: "consent" }).toString();
   const code = await new Promise((resolve, reject) => {
     const server = http.createServer((req, res) => {
       const u = new URL(req.url, redirectUri); const c = u.searchParams.get("code"); const err = u.searchParams.get("error");
@@ -1405,8 +1473,8 @@ ipcMain.handle("google:connect", async () => {
   });
   const tok = await httpJson("https://oauth2.googleapis.com/token", { method: "POST", body: new URLSearchParams({ code, client_id: s.googleAdsClientId, client_secret: s.googleAdsClientSecret, redirect_uri: redirectUri, grant_type: "authorization_code" }) });
   if (!tok.refresh_token) throw new Error("O Google não devolveu a permissão; refaça a conexão.");
-  const st = readStore(); st.settings.googleAdsRefreshToken = tok.refresh_token; st.settings.googleSheetsRefreshToken = tok.refresh_token; writeStore(st); _gat = null; _shAt = null;
-  return { ok: true };
+  const st = readStore(); st.settings.googleAdsRefreshToken = tok.refresh_token; st.settings.googleSheetsRefreshToken = tok.refresh_token; st.settings.googleMeetingsOk = /calendar\.readonly/.test(tok.scope || "") && /documents\.readonly/.test(tok.scope || ""); writeStore(st); _gat = null; _shAt = null;
+  return { ok: true, meetings: !!st.settings.googleMeetingsOk };
 });
 // chaves da EQUIPE (sem nada pessoal): quem recebe conecta o próprio Meta, Trello e Google
 ipcMain.handle("keys:exportTeam", async () => {

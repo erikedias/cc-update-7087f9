@@ -1,7 +1,7 @@
 {
   "name": "central-campanhas",
   "productName": "Central de Campanhas",
-  "version": "0.14.1",
+  "version": "0.15.0",
   "description": "Visão completa das campanhas ativas por cliente — Meta, Google e LinkedIn, com criativos e estratégia",
   "main": "electron/main.cjs",
   "author": "@diasesteci",

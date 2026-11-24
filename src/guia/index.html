@@ -55,10 +55,11 @@
   <a href="#trello">2. Trello</a>
   <a href="#gemini">3. Gemini (IA)</a>
   <a href="#meta">4. Meta Ads</a>
-  <a href="#google">5. Google (Ads e planilhas)</a>
+  <a href="#google">5. Google (Ads, planilhas e reuniões)</a>
   <a href="#linkedin">6. LinkedIn (opcional)</a>
   <small>Depois das chaves</small>
   <a href="#clientes">Montar sua lista de clientes</a>
+  <a href="#reunioes">Reuniões e "O que estamos atacando"</a>
   <a href="#cofre">Cofre P.O. (opcional)</a>
   <a href="#atualizacao">Atualizações automáticas</a>
   <a href="#problemas">Problemas comuns</a>
@@ -140,8 +141,8 @@
 </section>
 
 <section id="google">
-  <h2>5. Google (Ads e planilhas) <span class="tag need">Essencial</span></h2>
-  <p class="sub">Um único login libera o <b>Google Ads</b> e a <b>leitura das planilhas de leads</b> (inclusive as cores: verde = MQL, vermelho = fora do perfil).</p>
+  <h2>5. Google (Ads, planilhas e reuniões) <span class="tag need">Essencial</span></h2>
+  <p class="sub">Um único login libera o <b>Google Ads</b>, a <b>leitura das planilhas de leads</b> (inclusive as cores: verde = MQL, vermelho = fora do perfil) e a <b>agenda e os documentos das reuniões</b> (notas do Gemini e transcrições).</p>
   <h3>O que vem da Erik (da empresa)</h3>
   <ul>
     <li><b>Developer Token</b> do Google Ads (fica na conta MCC da Raizhe: Google Ads → <b>Ferramentas</b> → <b>Configuração</b> → <b>Central de API</b>).</li>
@@ -177,9 +178,26 @@
   <div class="note">As <b>planilhas de leads</b> e o <b>"feito na semana"</b> vêm do board do Trello: o app lê os cards da lista <b>"Links Úteis"</b> (qualquer link de planilha do Google) e a lista <b>"O que foi feito na semana"</b>.</div>
 </section>
 
+<section id="reunioes">
+  <h2>Reuniões e "O que estamos atacando"</h2>
+  <p>A leitura estratégica de cada cliente (gargalo, hipótese, solução e a linha do tempo de quando foi combinado e ativado) vem <b>direto das reuniões</b>. Você não precisa de Obsidian. Há três jeitos de alimentar, e eles se somam:</p>
+  <ol>
+    <li><b>Agenda do Google (automático).</b> Em Configurações, clique em <b>Conectar Google</b> (ou <b>Reconectar</b>, se já tinha conectado antes desta versão) e aprove também a agenda e os documentos. No cliente, em <b>Reuniões lidas</b>, clique em <b>Ler da agenda do Google</b>. O app procura na sua agenda dos últimos 75 dias os eventos cujo título tem o nome do cliente e lê o documento de anotações ou transcrição do Gemini anexado ao evento.</li>
+    <li><b>Colar a ata ou a transcrição.</b> Em <b>Reuniões lidas</b> → <b>Colar ata ou transcrição</b>: escolha a data, cole o texto (pode ser a transcrição bruta, com as falas) e guarde. Serve para qualquer reunião, mesmo sem Google.</li>
+    <li><b>Cofre Obsidian</b> (só para quem já usa). Continua funcionando como antes.</li>
+  </ol>
+  <p>Depois clique em <b>Gerar leitura estratégica</b>. Ela é refeita quando entra reunião nova.</p>
+  <h3>Para a Erik: ativar uma vez no projeto Google Cloud</h3>
+  <ul>
+    <li>Em <b>APIs e serviços → Biblioteca</b>, ative <b>Google Calendar API</b> e <b>Google Docs API</b> (a de Planilhas já está).</li>
+    <li>Em <b>Tela de consentimento OAuth</b>, confira se o e-mail de cada pessoa do time está em <b>Usuários de teste</b>.</li>
+  </ul>
+  <p class="hint">Para o app achar o evento, o <b>título da reunião precisa ter o nome do cliente</b> (ex.: "Alinhamento Semanal - Raizhe &amp; Vieira Mello"). Se o Google não anexar notas ao evento, use a opção de colar.</p>
+</section>
+
 <section id="cofre">
   <h2>Cofre P.O. <span class="tag opt">Opcional</span></h2>
-  <p>Só para quem usa a rotina P.O. no Obsidian. Em Configurações → <b>Cofre Clientes P.O.</b> escolha a pasta do cofre. Com ela, aparecem o <b>"O que estamos atacando"</b> (leitura de reuniões e histórico) e a lista de clientes sai do cofre. Sem o cofre, o app funciona normalmente com campanhas, criativos, "feito na semana" e leads.</p>
+  <p>Só para quem usa a rotina P.O. no Obsidian. Em Configurações → <b>Cofre Clientes P.O.</b> escolha a pasta do cofre. Com ela, a lista de clientes sai do cofre e as notas de reunião e o histórico dele entram na leitura do <b>"O que estamos atacando"</b>. Sem o cofre, o app funciona normalmente: as reuniões vêm da agenda do Google ou coladas à mão (veja a seção anterior).</p>
 </section>
 
 <section id="atualizacao">
@@ -202,6 +220,9 @@
     <tr><td>Google: "Acesso bloqueado"</td><td>Peça à Erik para adicionar seu e-mail como usuário de teste do app Google.</td></tr>
     <tr><td>Google Ads: "developer token" ou "login-customer-id"</td><td>Confira o Developer Token e o <b>ID da MCC</b> (só números, sem traços).</td></tr>
     <tr><td>Planilha de leads: "privada" ou "sem acesso"</td><td>Clique em <b>Conectar com Google</b> usando a conta que tem acesso, ou peça acesso ao cliente.</td></tr>
+    <tr><td>Reuniões: "Reconecte o Google"</td><td>A conexão é anterior à leitura de agenda. Em Configurações, clique em <b>Reconectar o Google</b> e aprove todas as permissões.</td></tr>
+    <tr><td>Reuniões: "Ative a API do Google Calendar/Docs"</td><td>É um clique da Erik no projeto Google (Biblioteca → Google Calendar API e Google Docs API → Ativar).</td></tr>
+    <tr><td>Agenda lida, mas "nenhum documento anexado"</td><td>O evento não tem as notas do Gemini anexadas, ou o título não tem o nome do cliente. Cole a ata em <b>Reuniões lidas</b>.</td></tr>
     <tr><td>Planilha: "ative a API do Google Sheets"</td><td>É um clique da Erik no projeto Google (Biblioteca → Google Sheets API → Ativar).</td></tr>
     <tr><td>Cliente sem contas de anúncio</td><td>No Reportei, a rede do cliente precisa estar conectada ao projeto dele. Ou digite o ID da conta na linha do cliente em Configurações.</td></tr>
     <tr><td>Reportei: "integração expirada"</td><td>No Reportei, reconecte a rede do cliente (Meta/Google/LinkedIn).</td></tr>

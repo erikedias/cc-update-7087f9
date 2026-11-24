@@ -1,12 +1,12 @@
 {
-  "version": "0.14.1",
-  "notes": "Ajuste de texto no guia",
-  "publishedAt": "2026-11-24T17:19:51.692Z",
+  "version": "0.15.0",
+  "notes": "Leitura estratégica sem Obsidian: lê as reuniões da agenda do Google (notas e transcrições do Gemini) ou a ata colada. Reconecte o Google em Configurações para liberar a agenda.",
+  "publishedAt": "2026-11-24T17:32:55.963Z",
   "files": [
     {
       "path": "src/app.js",
-      "sha256": "e5cd35a453cf2fe02c47263a1555543d6190731a87bfcac80aeb358e40806e2a",
-      "size": 116924
+      "sha256": "c33a4f82bc7847100cc42bf1c1e1bbb324e59e88fc361824dedc5b7f96232799",
+      "size": 121147
     },
     {
       "path": "src/engine.js",
@@ -30,8 +30,8 @@
     },
     {
       "path": "src/guia/index.html",
-      "sha256": "e26b336d662a1c44c27035dc84384df84abab721840def0d4360edb94d0e078e",
-      "size": 20147
+      "sha256": "fb65c961646cab490aba4e3263bb8ae2487aa860e38370c200f219dea9d59743",
+      "size": 22786
     },
     {
       "path": "src/index.html",
@@ -40,22 +40,27 @@
     },
     {
       "path": "src/styles.css",
-      "sha256": "37d4acb50c3d41ab4a2fa2afe16edf29673dd0ef3bc98a3cbeb1ca16dd6acc23",
-      "size": 64150
+      "sha256": "790a881c4d49d6fb1d87c62b45f303967d4cc5a35024d751854830fb492d297f",
+      "size": 65775
     },
     {
       "path": "electron/main.cjs",
-      "sha256": "c36e71c59340aa59e1b27bdaf0a2a6ce80bb8a83359ec2f7837a87ea96cf5d51",
-      "size": 129880
+      "sha256": "f17d55fffb45a2c7196364199bde88e1a034bf3aafae98da68c05a4371ce71fe",
+      "size": 136106
+    },
+    {
+      "path": "electron/meetings.cjs",
+      "sha256": "ec5cd95cdc731fce1ba7a35e8a040aea5f323496dc063bca387165dedd91c3cf",
+      "size": 4050
     },
     {
       "path": "electron/preload.cjs",
-      "sha256": "7a48ef04247b49e223714624132b62b079540f6c0f624571a574bb85c4021b5b",
-      "size": 2396
+      "sha256": "a742c82a53c9aad22e0fe3deee8e74372a45c7ad40c894dcf568be64cf3d2a2b",
+      "size": 2632
     },
     {
       "path": "package.json",
-      "sha256": "1267ebdcb42f79f77c55ddfcfefc975435925b1b1dd185db920ad1a09a300973",
+      "sha256": "8520fd1caa95ea228c0492a824bb282f76d51fffd6bb50332c9628076496ef55",
       "size": 1891
     }
   ]

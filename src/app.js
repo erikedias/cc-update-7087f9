@@ -342,11 +342,11 @@ function strategyHTML(c) {
   const head = `
     <div class="strat-head">
       <div><h2>O que estamos atacando</h2>
-      <p class="sub">${ai ? `Leitura gerada em ${new Date(ai.geradoEm).toLocaleDateString("pt-BR")} a partir do cofre${s.aiStale ? ` · <span class="warn-t">o cofre mudou desde então</span>` : ""}` : "A partir do histórico, das reuniões e dos combinados do cofre Clientes P.O."}</p></div>
+      <p class="sub">${ai ? `Leitura gerada em ${new Date(ai.geradoEm).toLocaleDateString("pt-BR")} a partir das reuniões${s.aiStale ? ` · <span class="warn-t">há reunião nova ou alterada desde então</span>` : ""}` : "A partir das reuniões do cliente (agenda do Google, atas coladas ou cofre Obsidian)."}</p></div>
       <div class="strat-actions">
-        <button class="btn ghost" data-act="vault">${icon("folder")}Abrir no Obsidian</button>
-        <button class="btn ghost" data-act="toggle-vault">${st.showVault ? "Esconder notas" : "Ver notas do cofre"}</button>
-        <button class="btn ${ai && !s.aiStale && ai.v >= 3 ? "ghost" : "primary"}" data-act="gen-strat" ${st.stratLoading ? "disabled" : ""}>${st.stratLoading ? `<span class="spin"></span>Lendo o cofre…` : `${icon("spark")}${ai ? (ai.v >= 3 ? "Atualizar leitura" : "Atualizar leitura (com linha do tempo)") : "Gerar leitura estratégica"}`}</button>
+        ${(s.meetings || {}).hasVault ? `<button class="btn ghost" data-act="vault">${icon("folder")}Abrir no Obsidian</button>
+        <button class="btn ghost" data-act="toggle-vault">${st.showVault ? "Esconder notas" : "Ver notas do cofre"}</button>` : ""}
+        <button class="btn ${ai && !s.aiStale && ai.v >= 3 ? "ghost" : "primary"}" data-act="gen-strat" ${st.stratLoading ? "disabled" : ""}>${st.stratLoading ? `<span class="spin"></span>Lendo as reuniões…` : `${icon("spark")}${ai ? (ai.v >= 3 ? "Atualizar leitura" : "Atualizar leitura (com linha do tempo)") : "Gerar leitura estratégica"}`}</button>
       </div>
     </div>`;
   const fr = ai && ai.frentes && ai.frentes.length ? `
@@ -367,14 +367,22 @@ function strategyHTML(c) {
       </li>`).join("")}</ol>
     ${(ai.proximos || []).length ? `<div class="next"><label>Próximos passos</label><ul>${ai.proximos.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
     <button class="linkish more-l" data-act="strat-full">Mostrar resumido</button>`}` :
-    `<div class="strat-empty">${b.visaoGeral || b.meetings && b.meetings.length ? `<p>As notas deste cliente estão no cofre. Gere a leitura para ver cada gargalo com a hipótese e a solução lado a lado, ligados às campanhas.</p>` : `<p>Ainda não há histórico nem reunião registrada para este cliente no cofre.</p>`}</div>`;
+    `<div class="strat-empty">${(s.meetings && s.meetings.list.length) || b.visaoGeral ? `<p>Já há reunião deste cliente para ler. Gere a leitura para ver cada gargalo com a hipótese e a solução lado a lado, ligados às campanhas.</p>` : `<p>Ainda não há reunião deste cliente. Leia da agenda do Google ou cole a ata/transcrição abaixo.</p>`}</div>`;
   const vault = st.showVault ? `<div class="vault">
       ${b.visaoGeral ? `<h3>Gargalo por semana</h3>${md(b.visaoGeral)}` : ""}
       ${b.ultimaSemana ? `<h3>Última semana registrada</h3>${md(b.ultimaSemana.replace(/^## .*\n/, ""))}` : ""}
       ${(b.meetings || []).slice(0, 2).map((m) => m.diagnostico ? `<h3>Diagnóstico da reunião de ${br(m.date)}</h3>${md(m.diagnostico)}` : "").join("")}
       ${b.emAberto ? `<h3>Em aberto</h3>${md(b.emAberto)}` : ""}
     </div>` : "";
-  return `<section class="strat">${head}${fr}${vault}</section>`;
+  return `<section class="strat">${head}${fr}${meetingsPanel(c, s)}${vault}</section>`;
+}
+const SRC_L = { obsidian: "Obsidian", google: "Agenda Google", manual: "Colada" };
+function meetingsPanel(c, s) {
+  const m = s.meetings || { list: [] }; const list = [...m.list].reverse();
+  const btnG = m.googleOn && m.googleOk ? `<button class="btn ghost sm" data-act="meet-refresh" ${st.meetBusy ? "disabled" : ""}>${st.meetBusy ? `<span class="spin"></span>Lendo a agenda…` : `${icon("refresh")}Ler da agenda do Google`}</button>` : `<button class="btn ghost sm" data-act="meet-google">${icon("ext")}${m.googleOn ? "Reconectar o Google (agenda e documentos)" : "Conectar o Google"}</button>`;
+  const form = st.meetForm ? `<div class="meet-form"><div class="mf-row"><input id="mfDate" type="date" value="${new Date().toLocaleDateString("sv-SE")}"/><input id="mfTitle" placeholder="Título (ex.: Alinhamento semanal)" autocomplete="off"/></div><textarea id="mfText" rows="8" placeholder="Cole aqui as anotações do Gemini, a ata ou a transcrição inteira da reunião. Pode ser texto bruto com as falas."></textarea><div class="mf-row"><button class="btn primary sm" data-act="meet-save">Guardar reunião</button><button class="btn ghost sm" data-act="meet-form">Cancelar</button></div></div>` : "";
+  const note = st.meetNote && st.meetNote[c.key] ? `<p class="hint ${st.meetNote[c.key].err ? "warn-t" : ""}">${esc(st.meetNote[c.key].msg)}</p>` : "";
+  return `<div class="meets internal-btn"><div class="meets-head"><div><h3>Reuniões lidas${list.length ? ` <span class="cnt">${list.length}</span>` : ""}</h3><p class="hint">${m.googleAt ? `Agenda lida em ${new Date(m.googleAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}. ` : ""}A leitura estratégica usa todas estas reuniões, mesmo sem Obsidian.</p></div><div class="strat-actions">${btnG}<button class="btn ghost sm" data-act="meet-form">${icon("plus")}Colar ata ou transcrição</button></div></div>${note}${form}${list.length ? `<ul class="meet-list">${list.map((x) => `<li><b>${br(x.date)}</b><span class="mt">${esc(x.title)}</span><span class="pill src-${x.source}">${SRC_L[x.source] || x.source}${x.kind === "transcricao" ? " · transcrição" : ""}</span><small>${Math.round(x.chars / 1000)} mil caracteres</small>${x.url ? `<a href="${esc(x.url)}" target="_blank" title="Abrir o documento">${icon("ext")}</a>` : ""}${x.source === "manual" ? `<button class="linkish" data-act="meet-rm" data-id="${esc(x.id)}">remover</button>` : ""}</li>`).join("")}</ul>` : ""}</div>`;
 }
 /* ---------------- leads da planilha de acompanhamento ---------------- */
 const platOfTab = (n) => { const t = String(n || "").toLowerCase(); return /meta|facebook|instagram/.test(t) ? "meta" : /google/.test(t) ? "google" : /linkedin/.test(t) ? "linkedin" : ""; };
@@ -1039,10 +1047,10 @@ function settingsHTML() {
     <div class="kgrid k2">
       ${keyForm("reportei", "Reportei", k.reportei, "Lista os clientes e traz as contas e o LinkedIn.", [["reporteiToken", "Token da API", true]], "Salvar e testar", "reportei")}
       ${keyForm("trello", "Trello", k.trello, "Liga cada cliente ao board dele, traz o 'feito na semana' e acha as planilhas de leads.", [["trelloKey", "API Key", true], ["trelloToken", "Token", true]], "Salvar e testar", "trello")}
-      ${keyForm("gemini", "Gemini (IA)", k.gemini, "Gera a leitura estratégica de cada cliente a partir do cofre.", [["geminiKey", "Chave da API", true]], "Salvar e testar", "gemini")}
+      ${keyForm("gemini", "Gemini (IA)", k.gemini, "Gera a leitura estratégica de cada cliente a partir das reuniões.", [["geminiKey", "Chave da API", true]], "Salvar e testar", "gemini")}
       ${keyForm("meta", "Meta Ads", k.meta && (!k.metaExpiresAt || k.metaExpiresAt * 1000 > Date.now()), metaDesc, [["metaToken", "Token de acesso", true, "metaToken"], ["metaAppId", "App ID", false, "metaAppId"], ["metaAppSecret", "App Secret (para estender o token)", true, "metaAppSecret"]], "Salvar e testar", "meta", `<button class="btn ghost sm" data-act="meta-extend">Estender para 60 dias</button>`)}
-      ${keyForm("google", "Google (Ads e planilhas)", k.google && k.sheets, `Ads: ${k.google ? "conectado" : "não conectado"} · Planilhas: ${k.sheets ? "conectado" : "não conectado"}. Um único login libera os dois.`, [["googleAdsDevToken", "Developer Token", true], ["googleAdsClientId", "Client ID", false], ["googleAdsClientSecret", "Client Secret", true], ["googleAdsLoginCustomerId", "ID da MCC (só números)", false]], "Salvar", "googleads", `<button class="btn primary sm" data-act="google-connect">Conectar com Google</button><button class="btn ghost sm" data-act="key-test" data-which="googleads">Testar</button>`)}
-      ${keyCard("Cofre Clientes P.O.", k.vaultFound, k.vaultFound ? esc(k.vaultPath) : "Opcional (só para quem usa a rotina P.O.): pasta do cofre no Obsidian. Sem ela, o app mostra só campanhas e criativos.", `<button class="btn ghost sm" data-act="vault-pick">Escolher pasta</button>`)}
+      ${keyForm("google", "Google (Ads, planilhas e reuniões)", k.google && k.sheets, `Ads: ${k.google ? "conectado" : "não conectado"} · Planilhas: ${k.sheets ? "conectado" : "não conectado"} · Reuniões: ${k.meetings ? "conectado" : k.sheets ? "reconecte para liberar agenda e documentos" : "não conectado"}. Um único login libera tudo.`, [["googleAdsDevToken", "Developer Token", true], ["googleAdsClientId", "Client ID", false], ["googleAdsClientSecret", "Client Secret", true], ["googleAdsLoginCustomerId", "ID da MCC (só números)", false]], "Salvar", "googleads", `<button class="btn primary sm" data-act="google-connect">Conectar com Google</button><button class="btn ghost sm" data-act="key-test" data-which="googleads">Testar</button>`)}
+      ${keyCard("Cofre Clientes P.O.", k.vaultFound, k.vaultFound ? esc(k.vaultPath) : "Opcional (só para quem usa a rotina P.O.): pasta do cofre no Obsidian. Sem ela, as reuniões vêm da agenda do Google ou coladas em cada cliente.", `<button class="btn ghost sm" data-act="vault-pick">Escolher pasta</button>`)}
       ${keyCard("LinkedIn Ads (opcional)", k.linkedin, k.linkedin ? "API conectada: copy e mídia dos anúncios." : "Não é necessário: as campanhas e métricas do LinkedIn já vêm pelo Reportei.", k.linkedinApp ? `<button class="btn ghost sm" data-act="li-connect">Conectar pelo navegador</button>` : "")}
     </div>
   </section>
@@ -1186,6 +1194,18 @@ document.addEventListener("click", async (e) => {
   }
   if (act === "present") { st.present = !st.present; document.body.classList.toggle("present", st.present); closeDrawer(); return renderMain(true); }
   if (act === "done-toggle") { const id = a.dataset.id; if (st.doneOpen.has(id)) st.doneOpen.delete(id); else st.doneOpen.add(id); return renderMain(true); }
+  if (act === "meet-form") { st.meetForm = !st.meetForm; return renderMain(true); }
+  if (act === "meet-google") { const r = await safe(() => api7.googleConnect(), "Conexão com o Google"); if (r) { await refreshKeys?.(); toast("Google conectado."); loadStrategy(true); } return; }
+  if (act === "meet-refresh") {
+    st.meetBusy = true; renderMain(true); const r = await safe(() => api8.meetingsRefresh({ key: c.key }), "Agenda do Google"); st.meetBusy = false;
+    st.meetNote = st.meetNote || {}; st.meetNote[c.key] = !r ? null : r.ok ? { msg: r.count ? `${r.count} documento${r.count > 1 ? "s" : ""} de reunião lido${r.count > 1 ? "s" : ""} (${r.found} evento${r.found === 1 ? "" : "s"} do cliente na agenda).${r.docErr ? " Aviso: " + r.docErr + "." : ""}` : `${r.found || 0} evento(s) do cliente na agenda, mas nenhum com documento de notas/transcrição anexado. Cole a ata se precisar.`, err: !r.count } : { msg: r.reason, err: true };
+    await loadStrategy(true); return;
+  }
+  if (act === "meet-save") {
+    const text = $("#mfText").value, date = $("#mfDate").value, title = $("#mfTitle").value;
+    const r = await safe(() => api8.meetingsAdd({ key: c.key, date, title, text }), "Guardar reunião"); if (r) { st.meetForm = false; toast("Reunião guardada."); await loadStrategy(true); } return;
+  }
+  if (act === "meet-rm") { await safe(() => api8.meetingsRemove({ key: c.key, id: a.dataset.id })); return loadStrategy(true); }
   if (act === "toggle-vault") { st.showVault = !st.showVault; return renderMain(true); }
   if (act === "vault") return api.vaultOpen({ key: c.key });
   if (act === "sync") {
