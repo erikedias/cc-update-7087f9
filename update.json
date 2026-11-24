@@ -1,7 +1,7 @@
 {
-  "version": "0.14.0",
-  "notes": "Atualização automática pelo GitHub, tela de chaves com teste e guia passo a passo",
-  "publishedAt": "2026-11-24T17:12:43.811Z",
+  "version": "0.14.1",
+  "notes": "Ajuste de texto no guia",
+  "publishedAt": "2026-11-24T17:13:45.749Z",
   "files": [
     {
       "path": "src/app.js",
@@ -30,8 +30,8 @@
     },
     {
       "path": "src/guia/index.html",
-      "sha256": "a6a1ef853c075ab6455a428c94c4137c0cbd763bdf620b26accfce4dc9a1281d",
-      "size": 20104
+      "sha256": "e26b336d662a1c44c27035dc84384df84abab721840def0d4360edb94d0e078e",
+      "size": 20147
     },
     {
       "path": "src/index.html",
@@ -55,7 +55,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "bb4663e0ea2e4d525e6d1614b7d28e28f6bce1b35997d5221e4849a40ed6b5c4",
+      "sha256": "7b02fd43a4d2881e7f28fad1b01d74f0ec54993ed7b60dec15b2c6429b0f6633",
       "size": 1852
     }
   ]
