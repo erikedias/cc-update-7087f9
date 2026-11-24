@@ -75,6 +75,7 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "shortcutName": "Central de Campanhas"
-    }
+    },
+    "afterSign": "build/afterSign.js"
   }
 }

@@ -5,3 +5,5 @@ Instaladores/
 # ferramentas de teste locais (leem dados da máquina da Erik)
 scripts/*
 !scripts/gen-update.js
+Pacote de Instalacao/
+Montar Pacote de Instalacao.command

@@ -1,7 +1,7 @@
 {
   "version": "0.14.1",
   "notes": "Ajuste de texto no guia",
-  "publishedAt": "2026-11-24T17:13:45.749Z",
+  "publishedAt": "2026-11-24T17:19:51.692Z",
   "files": [
     {
       "path": "src/app.js",
@@ -55,8 +55,8 @@
     },
     {
       "path": "package.json",
-      "sha256": "7b02fd43a4d2881e7f28fad1b01d74f0ec54993ed7b60dec15b2c6429b0f6633",
-      "size": 1852
+      "sha256": "1267ebdcb42f79f77c55ddfcfefc975435925b1b1dd185db920ad1a09a300973",
+      "size": 1891
     }
   ]
 }
