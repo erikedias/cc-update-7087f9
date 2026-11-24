@@ -1,0 +1,7 @@
+node_modules/
+dist/
+Instaladores/
+.DS_Store
+# ferramentas de teste locais (leem dados da máquina da Erik)
+scripts/*
+!scripts/gen-update.js

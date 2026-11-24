@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Central de Campanhas — Guia de configuração</title>
+<style>
+  @font-face { font-family: "Space Grotesk"; src: url(../fonts/SpaceGrotesk.woff2) format("woff2"); font-weight: 300 700; font-display: swap; }
+  @font-face { font-family: "Inter"; src: url(../fonts/Inter.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
+  :root { --bg:#0A0E14; --surface:#111722; --card:#161B24; --line:rgba(167,176,192,.16); --text:#E8ECF3; --text2:#A7B0C0; --text3:#7C8699; --blue:#5B8BFF; --blue-a:rgba(47,107,255,.14); --good:#3DD68C; --warn:#F5B544; --bad:#FF6166; color-scheme: dark; }
+  @media (prefers-color-scheme: light) { :root { --bg:#F6F7FA; --surface:#FFFFFF; --card:#FFFFFF; --line:rgba(20,30,50,.14); --text:#0E1420; --text2:#3E485A; --text3:#6A7487; --blue:#2F5FE0; --blue-a:rgba(47,107,255,.10); --good:#17925A; --warn:#B7791F; --bad:#C93A3F; color-scheme: light; } }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 20px; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 400 15px/1.65 "Inter", -apple-system, "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 32px 24px 100px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 40px; }
+  nav.toc { position: sticky; top: 24px; align-self: start; display: flex; flex-direction: column; gap: 2px; font-size: 13.5px; }
+  nav.toc .brand { font: 700 17px "Space Grotesk", system-ui, sans-serif; letter-spacing: -.02em; margin-bottom: 14px; }
+  nav.toc a { color: var(--text2); text-decoration: none; padding: 6px 10px; border-radius: 7px; }
+  nav.toc a:hover { background: var(--blue-a); color: var(--text); }
+  nav.toc small { color: var(--text3); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; margin: 14px 10px 4px; }
+  main { min-width: 0; }
+  h1 { font: 700 36px/1.1 "Space Grotesk", system-ui, sans-serif; letter-spacing: -.03em; margin: 0 0 8px; text-wrap: balance; }
+  .lead { color: var(--text2); font-size: 16.5px; max-width: 62ch; margin: 0 0 28px; }
+  section { margin: 0 0 36px; padding: 24px 26px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+  h2 { font: 650 23px/1.2 "Space Grotesk", system-ui, sans-serif; letter-spacing: -.02em; margin: 0 0 4px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  h3 { font: 600 15px "Space Grotesk", system-ui, sans-serif; margin: 22px 0 6px; color: var(--text); }
+  .tag { font: 600 11px "Inter", sans-serif; text-transform: uppercase; letter-spacing: .06em; padding: 3px 9px; border-radius: 99px; }
+  .tag.need { color: var(--good); background: rgba(61,214,140,.14); } .tag.opt { color: var(--text2); background: rgba(167,176,192,.14); } .tag.admin { color: var(--warn); background: rgba(245,181,68,.14); }
+  p { margin: 8px 0; } .sub { color: var(--text2); margin-top: 0; }
+  ol, ul { padding-left: 22px; margin: 8px 0; } li { margin: 6px 0; }
+  ol.steps { list-style: none; padding: 0; counter-reset: s; }
+  ol.steps > li { counter-increment: s; position: relative; padding: 2px 0 2px 42px; margin: 12px 0; }
+  ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 600 13px "Space Grotesk", sans-serif; background: var(--blue-a); color: var(--blue); }
+  code, .k { font: 500 12.5px ui-monospace, "SF Mono", Menlo, monospace; background: rgba(167,176,192,.14); padding: 2px 7px; border-radius: 6px; word-break: break-word; }
+  .k { color: var(--blue); } a { color: var(--blue); text-underline-offset: 3px; }
+  .where { margin-top: 14px; padding: 12px 16px; border-radius: 12px; background: var(--blue-a); border: 1px solid rgba(91,139,255,.28); }
+  .where b { color: var(--text); }
+  .note { margin: 12px 0; padding: 11px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--text2); font-size: 14px; }
+  .note.warn { border-color: rgba(245,181,68,.4); } .note.warn b { color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 10px 0; display: block; overflow-x: auto; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; } th { color: var(--text3); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin: 14px 0; }
+  .grid div { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 14px; } .grid b { display: block; margin-bottom: 2px; }
+  @media (max-width: 820px) { .wrap { grid-template-columns: 1fr; } nav.toc { position: static; flex-direction: row; flex-wrap: wrap; } nav.toc .brand, nav.toc small { width: 100%; } }
+  @media print { nav.toc { display: none; } .wrap { display: block; padding: 0; } section { break-inside: avoid; border-color: #ccc; } body { background: #fff; color: #000; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Índice">
+  <div class="brand">Central de Campanhas</div>
+  <a href="#comece">Comece por aqui</a>
+  <small>Chaves</small>
+  <a href="#reportei">1. Reportei</a>
+  <a href="#trello">2. Trello</a>
+  <a href="#gemini">3. Gemini (IA)</a>
+  <a href="#meta">4. Meta Ads</a>
+  <a href="#google">5. Google (Ads e planilhas)</a>
+  <a href="#linkedin">6. LinkedIn (opcional)</a>
+  <small>Depois das chaves</small>
+  <a href="#clientes">Montar sua lista de clientes</a>
+  <a href="#cofre">Cofre P.O. (opcional)</a>
+  <a href="#atualizacao">Atualizações automáticas</a>
+  <a href="#problemas">Problemas comuns</a>
+</nav>
+
+<main>
+<h1>Guia de configuração</h1>
+<p class="lead">Como pegar cada chave e onde colar no app, no seu ritmo e sozinha(o). Leva uns 20 minutos para configurar tudo. Suas chaves ficam guardadas só no seu computador.</p>
+
+<section id="comece">
+  <h2>Comece por aqui</h2>
+  <p class="sub">O que você vai usar e o que cada coisa libera.</p>
+  <table>
+    <tr><th>Chave</th><th>Libera</th><th>Precisa?</th></tr>
+    <tr><td><b>Reportei</b></td><td>Lista de clientes, contas de anúncio e dados do LinkedIn</td><td><span class="tag need">Essencial</span></td></tr>
+    <tr><td><b>Trello</b></td><td>Board de cada cliente, "feito na semana" e link da planilha de leads</td><td><span class="tag need">Essencial</span></td></tr>
+    <tr><td><b>Meta Ads</b></td><td>Campanhas, conjuntos e criativos (imagem, vídeo, texto) direto do Meta</td><td><span class="tag need">Essencial</span></td></tr>
+    <tr><td><b>Google</b></td><td>Google Ads direto da API e leitura das planilhas de leads (com cores)</td><td><span class="tag need">Essencial</span></td></tr>
+    <tr><td><b>Gemini</b></td><td>Leitura estratégica (gargalo, hipótese, solução e linha do tempo)</td><td><span class="tag opt">Recomendado</span></td></tr>
+    <tr><td><b>LinkedIn / Cofre P.O.</b></td><td>Recursos extras, só para quem usa</td><td><span class="tag opt">Opcional</span></td></tr>
+  </table>
+  <div class="note"><b>Recebeu um arquivo de chaves da Erik?</b> Abra o app → <span class="k">Configurações</span> → <span class="k">Importar arquivo de chaves</span>. Ele já preenche <b>Reportei, Gemini, Google (Developer Token, Client ID e Secret) e App ID do Meta</b>. Depois disso faltam só as chaves <b>pessoais</b>: Trello (passo 2), token do Meta (passo 4) e o botão <b>Conectar com Google</b> (passo 5). Apague o arquivo depois de importar.</div>
+  <div class="note warn"><b>Atenção:</b> nunca mande uma chave por e-mail aberto, grupo ou comentário. Chave é como senha: quem tem acesso a ela acessa a conta.</div>
+  <h3>Como abrir as configurações</h3>
+  <p>No app, clique em <span class="k">Configurações</span> (canto inferior esquerdo). Cada integração é um cartão com campos para colar a chave, o botão <span class="k">Salvar e testar</span> (mostra na hora se funcionou) e o link <span class="k">Como pegar</span>, que abre este guia no passo certo.</p>
+</section>
+
+<section id="reportei">
+  <h2>1. Reportei <span class="tag need">Essencial</span></h2>
+  <p class="sub">O Reportei é de onde vêm a lista de clientes, as contas de anúncio e os dados do LinkedIn.</p>
+  <ol class="steps">
+    <li>Entre em <a href="https://app.reportei.com" target="_blank">app.reportei.com</a> com o seu usuário.</li>
+    <li>Abra as <b>configurações da empresa</b> (menu da conta, canto superior) e procure a opção <b>API</b> (pode aparecer como <b>"API Reportei"</b> ou <b>"Integrações → API"</b>).</li>
+    <li>Gere ou copie o <b>token</b> (é um texto longo).</li>
+  </ol>
+  <div class="where"><b>Onde colar:</b> app → Configurações → cartão <span class="k">Reportei</span> → <span class="k">Token da API</span> → <span class="k">Salvar e testar</span>. Deve aparecer <b>"Conectado ao Reportei: N clientes visíveis"</b>.</div>
+  <div class="note">Se você não vê a opção de API, quem administra a conta da Raizhe no Reportei precisa liberar ou gerar o token para você.</div>
+</section>
+
+<section id="trello">
+  <h2>2. Trello <span class="tag need">Essencial</span></h2>
+  <p class="sub">Dá acesso ao board de cada cliente. Esta chave é <b>pessoal</b>: cada pessoa gera a sua.</p>
+  <ol class="steps">
+    <li>Entre no Trello com o seu usuário e abra <a href="https://trello.com/app-key" target="_blank">trello.com/app-key</a>.</li>
+    <li>Copie a <b>API Key</b> (a primeira informação da página).</li>
+    <li>Na mesma página, clique no link <b>"Token"</b> (ou "gerar um Token manualmente"), depois em <b>Permitir</b>, e copie o <b>Token</b> que aparece.</li>
+  </ol>
+  <div class="where"><b>Onde colar:</b> app → Configurações → cartão <span class="k">Trello</span> → <span class="k">API Key</span> e <span class="k">Token</span> → <span class="k">Salvar e testar</span>. Deve aparecer <b>"Conectado ao Trello como (seu nome)"</b>.</div>
+  <div class="note">Se o Trello pedir para criar um <b>Power-Up</b> antes de mostrar a chave: acesse <a href="https://trello.com/power-ups/admin" target="_blank">trello.com/power-ups/admin</a> → <b>Novo</b> → dê um nome (ex.: "Central de Campanhas"), escolha a sua área de trabalho e um e-mail → abra a aba <b>Chave de API</b> → <b>Gerar nova chave de API</b>. A chave e o link do token aparecem ali.</div>
+</section>
+
+<section id="gemini">
+  <h2>3. Gemini (IA) <span class="tag opt">Recomendado</span></h2>
+  <p class="sub">É a IA que lê as reuniões e o histórico do cliente e monta o "O que estamos atacando", com a linha do tempo de cada frente. O uso normal é gratuito.</p>
+  <ol class="steps">
+    <li>Abra <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> e entre com a sua conta Google.</li>
+    <li>Clique em <b>Criar chave de API</b> (se pedir, escolha ou crie um projeto) e copie a chave.</li>
+  </ol>
+  <div class="where"><b>Onde colar:</b> app → Configurações → cartão <span class="k">Gemini (IA)</span> → <span class="k">Chave da API</span> → <span class="k">Salvar e testar</span>.</div>
+</section>
+
+<section id="meta">
+  <h2>4. Meta Ads <span class="tag need">Essencial</span></h2>
+  <p class="sub">Traz campanhas, conjuntos, criativos e vídeos direto do Meta. O token é <b>pessoal</b>.</p>
+  <h3>Antes: ter acesso ao app do Meta</h3>
+  <p><span class="tag admin">A Erik faz</span> No app do Meta "Assistente de Campanhas" (developers.facebook.com → o app → <b>Funções do app</b>), a Erik adiciona o seu Facebook como <b>Desenvolvedor</b> ou <b>Testador</b>. Você recebe um convite no Facebook e precisa <b>aceitar</b>. Sem isso o Meta recusa o token.</p>
+  <h3>Gerar o token</h3>
+  <ol class="steps">
+    <li>Abra o <a href="https://developers.facebook.com/tools/explorer/" target="_blank">Explorador da Graph API</a> (developers.facebook.com → Ferramentas → Explorador da Graph API).</li>
+    <li>No campo <b>Aplicativo da Meta</b> (à direita), escolha <b>Assistente de Campanhas</b>.</li>
+    <li>Em <b>Usuário ou Página</b>, deixe <b>Token de acesso do usuário</b>.</li>
+    <li>Em <b>Permissões</b>, adicione: <code>ads_read</code>, <code>ads_management</code>, <code>business_management</code>, <code>pages_read_engagement</code> e <code>pages_show_list</code>.</li>
+    <li>Clique em <b>Gerar token de acesso</b>, autorize e, quando perguntar, <b>selecione todas as contas de anúncio e Páginas</b> dos clientes. Copie o token.</li>
+  </ol>
+  <h3>Estender para 60 dias</h3>
+  <p>O token do Explorador dura só algumas horas. Para ele durar 60 dias você precisa do <b>App ID</b> e do <b>App Secret</b> do app (a Erik passa no arquivo de chaves; o App ID já vem preenchido).</p>
+  <div class="where"><b>Onde colar:</b> app → Configurações → cartão <span class="k">Meta Ads</span> → <span class="k">Token de acesso</span> (o que você copiou), <span class="k">App ID</span> e <span class="k">App Secret</span> → <span class="k">Salvar e testar</span> → depois <span class="k">Estender para 60 dias</span>. O teste mostra a validade e as permissões que faltarem.</div>
+  <div class="note"><b>Renovação:</b> a cada ~50 dias repita só o "Gerar o token" e clique em <b>Estender</b>. Faltando 7 dias para vencer, aparece um aviso amarelo na barra lateral do app.</div>
+</section>
+
+<section id="google">
+  <h2>5. Google (Ads e planilhas) <span class="tag need">Essencial</span></h2>
+  <p class="sub">Um único login libera o <b>Google Ads</b> e a <b>leitura das planilhas de leads</b> (inclusive as cores: verde = MQL, vermelho = fora do perfil).</p>
+  <h3>O que vem da Erik (da empresa)</h3>
+  <ul>
+    <li><b>Developer Token</b> do Google Ads (fica na conta MCC da Raizhe: Google Ads → <b>Ferramentas</b> → <b>Configuração</b> → <b>Central de API</b>).</li>
+    <li><b>Client ID</b> e <b>Client Secret</b> do projeto Google da Raizhe.</li>
+    <li><b>ID da MCC</b> (só números, o código que aparece no topo da conta MCC, sem os traços).</li>
+  </ul>
+  <p>Tudo isso vem no arquivo de chaves da equipe. Se preferir preencher à mão, cole nos campos do cartão.</p>
+  <h3>Conectar a sua conta</h3>
+  <ol class="steps">
+    <li>No app: Configurações → cartão <span class="k">Google (Ads e planilhas)</span> → confira os 4 campos → clique em <span class="k">Conectar com Google</span>.</li>
+    <li>O navegador abre. Escolha a conta Google <b>que tem acesso à MCC da Raizhe</b> e às planilhas dos clientes.</li>
+    <li>Pode aparecer <b>"O Google não verificou este app"</b>. É normal: clique em <b>Avançado</b> → <b>Acessar Central de Campanhas (não seguro)</b>.</li>
+    <li>Marque as <b>duas permissões</b> (Google Ads e ver planilhas) e continue. A página mostra "Conectado". Volte ao app e clique em <span class="k">Testar</span>: deve aparecer <b>"Google Ads conectado: N conta(s)"</b>.</li>
+  </ol>
+  <div class="note warn"><b>"Acesso bloqueado" ou "app em teste"?</b> Fale com a Erik: ela precisa adicionar o seu e-mail como <b>usuário de teste</b> (Google Cloud → APIs e serviços → Tela de consentimento OAuth → Usuários de teste).</div>
+  <div class="note"><b>Planilhas:</b> a sua conta Google precisa ter acesso à planilha do cliente (ou a planilha estar compartilhada por link). Se o app avisar "ative a API do Google Sheets", é um clique <b>da Erik</b> no projeto do Google: console.cloud.google.com → Biblioteca → <b>Google Sheets API</b> → Ativar.</div>
+</section>
+
+<section id="linkedin">
+  <h2>6. LinkedIn <span class="tag opt">Opcional</span></h2>
+  <p>Não precisa configurar: as campanhas e métricas do LinkedIn já chegam pelo <b>Reportei</b>. A conexão própria só serve para ver o texto dos anúncios e exige o produto "Advertising API" aprovado no LinkedIn. Se for o seu caso, fale com a Erik.</p>
+</section>
+
+<section id="clientes">
+  <h2>Montar sua lista de clientes</h2>
+  <p class="sub">Com Reportei e Trello conectados, o resto é rápido. Você só vê os clientes que adicionar.</p>
+  <ol class="steps">
+    <li>App → <span class="k">Configurações</span> → seção <b>Clientes</b>.</li>
+    <li>Clique em <span class="k">Adicionar do Trello</span> e escolha o board do cliente. O app procura sozinho o projeto do Reportei de mesmo nome e puxa as <b>contas de Meta, Google e LinkedIn</b> que estão ligadas lá.</li>
+    <li>Se o nome do board for diferente do projeto do Reportei, clique em <b>Vincular projeto</b> na linha do cliente e escolha o certo. Dá para corrigir os IDs das contas na própria linha.</li>
+    <li>Repita para cada cliente. Clientes que você não atende mais podem ser desmarcados em <b>Ativo</b>.</li>
+  </ol>
+  <div class="note">As <b>planilhas de leads</b> e o <b>"feito na semana"</b> vêm do board do Trello: o app lê os cards da lista <b>"Links Úteis"</b> (qualquer link de planilha do Google) e a lista <b>"O que foi feito na semana"</b>.</div>
+</section>
+
+<section id="cofre">
+  <h2>Cofre P.O. <span class="tag opt">Opcional</span></h2>
+  <p>Só para quem usa a rotina P.O. no Obsidian. Em Configurações → <b>Cofre Clientes P.O.</b> escolha a pasta do cofre. Com ela, aparecem o <b>"O que estamos atacando"</b> (leitura de reuniões e histórico) e a lista de clientes sai do cofre. Sem o cofre, o app funciona normalmente com campanhas, criativos, "feito na semana" e leads.</p>
+</section>
+
+<section id="atualizacao">
+  <h2>Atualizações automáticas</h2>
+  <p>Toda vez que você abre o app, ele confere se há versão nova. Se houver, aparece "Atualizando…" por alguns segundos e ele reinicia sozinho. Você não precisa baixar nada.</p>
+  <ul>
+    <li>Para forçar: Configurações → <b>Verificar atualização</b>.</li>
+    <li>Se uma atualização der problema: Configurações → <b>Voltar à versão anterior</b>.</li>
+    <li>Suas chaves e clientes <b>não são apagados</b> nas atualizações.</li>
+  </ul>
+</section>
+
+<section id="problemas">
+  <h2>Problemas comuns</h2>
+  <table>
+    <tr><th>O que aparece</th><th>O que fazer</th></tr>
+    <tr><td>Meta: "Session has expired" / token inválido</td><td>O token venceu. Gere um novo no Explorador (passo 4) e clique em <b>Estender para 60 dias</b>.</td></tr>
+    <tr><td>Meta: faltam permissões</td><td>No Explorador, adicione as 5 permissões do passo 4, gere o token de novo e escolha <b>todas</b> as contas de anúncio.</td></tr>
+    <tr><td>Meta não mostra a conta de um cliente</td><td>No Explorador, ao autorizar, a conta do cliente não estava marcada. Gere o token de novo marcando todas.</td></tr>
+    <tr><td>Google: "Acesso bloqueado"</td><td>Peça à Erik para adicionar seu e-mail como usuário de teste do app Google.</td></tr>
+    <tr><td>Google Ads: "developer token" ou "login-customer-id"</td><td>Confira o Developer Token e o <b>ID da MCC</b> (só números, sem traços).</td></tr>
+    <tr><td>Planilha de leads: "privada" ou "sem acesso"</td><td>Clique em <b>Conectar com Google</b> usando a conta que tem acesso, ou peça acesso ao cliente.</td></tr>
+    <tr><td>Planilha: "ative a API do Google Sheets"</td><td>É um clique da Erik no projeto Google (Biblioteca → Google Sheets API → Ativar).</td></tr>
+    <tr><td>Cliente sem contas de anúncio</td><td>No Reportei, a rede do cliente precisa estar conectada ao projeto dele. Ou digite o ID da conta na linha do cliente em Configurações.</td></tr>
+    <tr><td>Reportei: "integração expirada"</td><td>No Reportei, reconecte a rede do cliente (Meta/Google/LinkedIn).</td></tr>
+    <tr><td>Mac: "o app está danificado" ou não abre</td><td>Veja o arquivo <b>"2 - AUTORIZAR NO MAC"</b> que veio no pacote de instalação.</td></tr>
+  </table>
+  <div class="note">Ainda com dúvida? Mande para a Erik uma foto da tela do app com a mensagem de erro. Nunca envie a chave em si.</div>
+</section>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{
+  "version": "0.14.0",
+  "notes": "Atualização automática pelo GitHub, tela de chaves com teste e guia passo a passo",
+  "publishedAt": "2026-11-24T17:12:43.811Z",
+  "files": [
+    {
+      "path": "src/app.js",
+      "sha256": "e5cd35a453cf2fe02c47263a1555543d6190731a87bfcac80aeb358e40806e2a",
+      "size": 116924
+    },
+    {
+      "path": "src/engine.js",
+      "sha256": "6d783568d319d8485cbeca44bb46703b47b161bdcf7ac5892457b7376cc85054",
+      "size": 15536
+    },
+    {
+      "path": "src/fonts/Inter.woff2",
+      "sha256": "c940764593d0fe5d596be327ca7558855e018039fb78509aa21921fd3644c3e4",
+      "size": 48432
+    },
+    {
+      "path": "src/fonts/JetBrainsMono.woff2",
+      "sha256": "2c32b9b3ee358c119e210f6f5195f9bd34894d78a785ff2e95d60e718e400af4",
+      "size": 31340
+    },
+    {
+      "path": "src/fonts/SpaceGrotesk.woff2",
+      "sha256": "a0d054c4af557de20afd6ca59f47ab353bcaec49c63ff04b6c9d39d0f8910557",
+      "size": 22320
+    },
+    {
+      "path": "src/guia/index.html",
+      "sha256": "a6a1ef853c075ab6455a428c94c4137c0cbd763bdf620b26accfce4dc9a1281d",
+      "size": 20104
+    },
+    {
+      "path": "src/index.html",
+      "sha256": "9757c6e86ebda215b4911ff1f68296f0de1f5612ff1789360aee55588115efa3",
+      "size": 914
+    },
+    {
+      "path": "src/styles.css",
+      "sha256": "37d4acb50c3d41ab4a2fa2afe16edf29673dd0ef3bc98a3cbeb1ca16dd6acc23",
+      "size": 64150
+    },
+    {
+      "path": "electron/main.cjs",
+      "sha256": "c36e71c59340aa59e1b27bdaf0a2a6ce80bb8a83359ec2f7837a87ea96cf5d51",
+      "size": 129880
+    },
+    {
+      "path": "electron/preload.cjs",
+      "sha256": "7a48ef04247b49e223714624132b62b079540f6c0f624571a574bb85c4021b5b",
+      "size": 2396
+    },
+    {
+      "path": "package.json",
+      "sha256": "bb4663e0ea2e4d525e6d1614b7d28e28f6bce1b35997d5221e4849a40ed6b5c4",
+      "size": 1852
+    }
+  ]
+}
